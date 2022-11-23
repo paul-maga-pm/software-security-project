@@ -141,6 +141,7 @@ int __cdecl main(int argc, char** argv) {
     
     while (fgets(file_buff, DEFAULT_READ_BUFLEN, file)) {
         printf("Now sending: %s\n", file_buff);
+        file_buff[DEFAULT_READ_BUFLEN - 1] = 0;
         send_to_server(ConnectSocket, file_buff);
     }
 
@@ -151,6 +152,11 @@ int __cdecl main(int argc, char** argv) {
         WSACleanup();
         return 1;
     }
+
+    char requestResult[DEFAULT_BUFLEN] = { 0 };
+    recv(ConnectSocket, requestResult, strlen(requestResult), 0);
+
+    printf(requestResult);
 
 
     //// Receive until the peer closes the connection
@@ -194,7 +200,7 @@ int check_path_traversal(char* path) {
 
 int check_metacharacters(char* path) {
     for (; *path; path++) {
-        if (!isalnum(*path) && *path != '_' && *path != '.' && *path != '/' && *path != ' ') {
+        if (!isalnum(*path) && *path != '_' && *path != '.' && *path != '/' && *path != ' ' && *path != '-') {
             return 0;
         }
     }

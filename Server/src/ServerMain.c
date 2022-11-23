@@ -175,13 +175,14 @@ int validatePath(char* path) {
 #define FILE_OPEN_OK_SIZE strlen(FILE_OPEN_OK)
 #define FILE_OPEN_ERR_SIZE strlen(FILE_OPEN_ERR)
 
-#define BUFFER_SIZE 1025
+#define BUFFER_SIZE 4
+#define MAX_BUFFER 1025
 
 void handleClientRequests(SOCKET clientSocket) {
 
-    char filePath[BUFFER_SIZE] = { 0 };
+    char filePath[MAX_BUFFER] = { 0 };
 
-    int recvResult = recv(clientSocket, filePath, BUFFER_SIZE, 0);
+    int recvResult = recv(clientSocket, filePath, MAX_BUFFER, 0);
 
     if (recvResult == SOCKET_ERROR) {
         printf("Error while receiving path: %d\n", WSAGetLastError());
@@ -232,12 +233,12 @@ void handleClientRequests(SOCKET clientSocket) {
         closesocket(clientSocket);
     }
 
-    char requestResult[BUFFER_SIZE] = { 0 };
+    char requestResult[MAX_BUFFER] = { 0 };
     if (SUCCESS) {
         fclose(filePtr);
-        strncpy_s(requestResult, BUFFER_SIZE - 1,"SUCCESS", strlen("SUCCESS"));
+        strncpy_s(requestResult, MAX_BUFFER - 1,"SUCCESS", strlen("SUCCESS"));
     } else {
-        strncpy_s(requestResult, BUFFER_SIZE - 1, "FAIL", strlen("FAIL"));
+        strncpy_s(requestResult, MAX_BUFFER - 1, "FAIL", strlen("FAIL"));
     }
 
     send(clientSocket, requestResult, strlen(requestResult), 0);
