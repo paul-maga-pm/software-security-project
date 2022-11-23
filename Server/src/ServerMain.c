@@ -28,9 +28,6 @@ int __cdecl main(void)
     struct addrinfo* result = NULL;
     struct addrinfo hints;
 
-    int iSendResult;
-    char recvbuf[DEFAULT_BUFLEN];
-    int recvbuflen = DEFAULT_BUFLEN;
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -90,8 +87,7 @@ int __cdecl main(void)
         if (ClientSocket == INVALID_SOCKET) {
             printf("accept failed with error: %d\n", WSAGetLastError());
             closesocket(ListenSocket);
-            WSACleanup();
-            return 1;
+            continue;
         }
 
         printf("Client connected\n");
@@ -102,11 +98,10 @@ int __cdecl main(void)
         if (iResult == SOCKET_ERROR) {
             printf("shutdown failed with error: %d\n", WSAGetLastError());
             closesocket(ClientSocket);
-            WSACleanup();
-            return 1;
         }
 
         // cleanup
+        printf("Client disconnected\n");
         closesocket(ClientSocket);
     }
     
@@ -116,19 +111,39 @@ int __cdecl main(void)
 }
 
 
-void receiveFromClient(SOCKET clientSocket, char* buffer) {
-
-}
-
 
 void handleClientRequests(SOCKET clientSocket) {
     
-    char buffer[1024] = { 0 };
+    const int BUFFER_SIZE = 1025;
+    char filePath[1025] = { 0 };
 
-    receiveFromClient(clientSocket, buffer);
+    int recvResult = recv(clientSocket, filePath, BUFFER_SIZE, 0);
 
-    printf("Path = %s\n", buffer);
-
+    if (recvResult == SOCKET_ERROR) {
+        printf("Error while receiving path: %d\n", WSAGetLastError());
+        return;
+    }
     
-    
+    printf("Path received = %s\n", filePath);
+
+
+    FILE* filePtr = NULL;
+
+    if (fopen_s(&filePtr, filePath, "w") != 0) {
+        printf("Couldn't open file %s\n", filePath);
+        return;
+    }
+
+    char buffer[1025] = { 0 };
+    while (recv(clientSocket, buffer, BUFFER_SIZE, 0) > 0) {
+        printf("Received Buffer:\n%s\n", buffer);
+
+        if (fwrite(buffer, 1, strlen(buffer), filePtr) < strlen(buffer)) {
+            printf("Eror while writting to file");
+            fclose(filePtr);
+            return;
+        }
+    }
+
+    fclose(filePtr);
 }
