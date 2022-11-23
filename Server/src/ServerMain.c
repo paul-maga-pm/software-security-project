@@ -135,14 +135,21 @@ void handleClientRequests(SOCKET clientSocket) {
     }
 
     char buffer[1025] = { 0 };
-    while (recv(clientSocket, buffer, BUFFER_SIZE, 0) > 0) {
-        printf("Received Buffer:\n%s\n", buffer);
-
-        if (fwrite(buffer, 1, strlen(buffer), filePtr) < strlen(buffer)) {
-            printf("Eror while writting to file");
-            fclose(filePtr);
-            return;
+    while (1) {
+        
+        int recvResult = recv(clientSocket, buffer, BUFFER_SIZE, 0);
+        if (recvResult == SOCKET_ERROR) {
+            printf("Error while receiving buffer\n");
+            break;
         }
+
+        if (recvResult == 0) {
+            printf("Finished receiving buffers\n");
+            break;
+        }
+
+        printf("Received buffer size: %zu\n, Buffer: %s\n", strlen(buffer), buffer);
+        fwrite(buffer, sizeof(char), strlen(buffer), filePtr);
     }
 
     fclose(filePtr);
