@@ -6,6 +6,8 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
 #pragma comment (lib, "Ws2_32.lib")
 #pragma comment (lib, "Mswsock.lib")
@@ -24,6 +26,19 @@ void send_to_server(SOCKET* ConnectSocket, char* string_to_send) {
         exit(1);
     }
 }
+
+void get_full_path(char* partialPath, char* full)
+{
+    char full_path[_MAX_PATH];
+    if (_fullpath(full, partialPath, _MAX_PATH) != NULL) {
+        printf("%s %s\n", partialPath, full);
+    }
+    else {
+        printf("Invalid path\n");
+        exit(1);
+    }
+}
+
 
 int __cdecl main(int argc, char** argv) {
     WSADATA wsaData;
@@ -93,7 +108,7 @@ int __cdecl main(int argc, char** argv) {
     }
     // Here we have an active connection so we can start sending datas
 
-    char path[1024] = { 0 };
+    char path[1025] = { 0 };
     printf("Give me the path: ");
     if (scanf_s("%s", path, (unsigned int)_countof(path)) <= 0) {
         printf("Error when reading the path!");
@@ -105,7 +120,7 @@ int __cdecl main(int argc, char** argv) {
         return 1;
     }
 
-    char new_path[1024] = { 0 };
+    char new_path[1025] = { 0 };
     printf("Give me the path where you want to save the content: ");
 
     if (scanf_s("%s", new_path, (unsigned int)_countof(new_path)) <= 0) {
@@ -159,15 +174,34 @@ int __cdecl main(int argc, char** argv) {
 }
 
 int check_path_traversal(char* path) {
+    char full_path[_MAX_PATH];
+    get_full_path(path, full_path);
+
+    char current_path[_MAX_PATH];
+    get_full_path(".", current_path);
+
+    for (int i = 0; current_path[i]; i++) {
+        if (full_path[i] == NULL) {
+            return 0;
+        }
+
+        if (current_path[i] != full_path[i]) {
+            return 0;
+        }
+    }
     return 1;
 }
 
 int check_metacharacters(char* path) {
+    for (; *path; path++) {
+        if (!isalnum(*path) && *path != '_' && *path != '.' && *path != '/' && *path != ' ') {
+            return 0;
+        }
+    }
     return 1;
 }
 
 int check_path(char* path) {
     return check_metacharacters(path) && check_path_traversal(path);
 }
-
 
